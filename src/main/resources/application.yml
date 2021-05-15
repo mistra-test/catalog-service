@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: catalog-service
+
+logging:
+  level:
+    "[com.netflix.discovery]": OFF
+
+server:
+  port: 8082
