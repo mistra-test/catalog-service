@@ -19,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -52,24 +53,31 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
 
+        Consumer<UserDetails> authenticate =
+                user -> {
+                    var usernamePasswordAuthenticationToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    user, null, user.getAuthorities());
+                    usernamePasswordAuthenticationToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(usernamePasswordAuthenticationToken);
+                    try {
+                        chain.doFilter(request, response);
+                    } catch (IOException e) {
+                        log.error("internal error while authenticating");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    } catch (ServletException e) {
+                        log.error("unknown internal error while authenticating");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    }
+                };
+
         var jwt = authorizationHeader.substring(7);
-        Optional<UserDetails> optUser = fetchUserDetails(jwt);
-
-        if (!optUser.isPresent()) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        }
-
-        var user = optUser.get();
-
-        var usernamePasswordAuthenticationToken =
-                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-
-        usernamePasswordAuthenticationToken.setDetails(
-                new WebAuthenticationDetailsSource().buildDetails(request));
-        SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-
-        chain.doFilter(request, response);
+        fetchUserDetails(jwt)
+                .ifPresentOrElse(
+                        authenticate,
+                        () -> response.setStatus(HttpServletResponse.SC_UNAUTHORIZED));
     }
 
     private Optional<UserDetails> fetchUserDetails(String jwt) {
