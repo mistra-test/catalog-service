@@ -9,9 +9,11 @@ import com.example.catalogservice.model.Rating;
 import lombok.Data;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.Serializable;
@@ -31,10 +33,12 @@ class Ratings implements Serializable {
 @Service
 public class CatalogService {
     private RestTemplate restTemplate;
+    private JmsTemplate jmsTemplate;
 
     @Autowired
-    public CatalogService(RestTemplate restTemplate) {
+    public CatalogService(RestTemplate restTemplate, JmsTemplate jmsTemplate) {
         this.restTemplate = restTemplate;
+        this.jmsTemplate = jmsTemplate;
     }
 
     public List<Movie> getMovieList() {
@@ -53,18 +57,19 @@ public class CatalogService {
                         "http://rating-resource/ratings/findByUser/" + userId, Ratings.class);
         if (ratingList == null) throw new NullWrapperException();
 
-        // TODO: fetch prima tutto e mappa, così è troppo costoso
         return ratingList.getRatingList().stream()
                 .map(this::joinRatingWithMovie)
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public Movie save(Movie movie) {
-        if (!contextUserCanWriteMovies()) {
+        if (!contextUserCanWriteMovies())
             throw new UnauthorizedOperationException("movie saving grant is missing");
-        }
-
-        return restTemplate.postForObject("http://movie-resource/movies", movie, Movie.class);
+        var savedMovie =
+                restTemplate.postForObject("http://movie-resource/movies", movie, Movie.class);
+        jmsTemplate.convertAndSend("test", "pluto is not a planet");
+        return savedMovie;
     }
 
     public Rating assignRating(Long userId, RatedMovie ratedMovie) {
