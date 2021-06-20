@@ -9,7 +9,6 @@ import com.example.catalogservice.model.Rating;
 import lombok.Data;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,12 +32,12 @@ class Ratings implements Serializable {
 @Service
 public class CatalogService {
     private RestTemplate restTemplate;
-    private JmsTemplate jmsTemplate;
+    //  private JmsTemplate jmsTemplate;
 
     @Autowired
-    public CatalogService(RestTemplate restTemplate, JmsTemplate jmsTemplate) {
+    public CatalogService(RestTemplate restTemplate /*, JmsTemplate jmsTemplate*/) {
         this.restTemplate = restTemplate;
-        this.jmsTemplate = jmsTemplate;
+        // this.jmsTemplate = jmsTemplate;
     }
 
     public List<Movie> getMovieList() {
@@ -68,7 +67,7 @@ public class CatalogService {
             throw new UnauthorizedOperationException("movie saving grant is missing");
         var savedMovie =
                 restTemplate.postForObject("http://movie-resource/movies", movie, Movie.class);
-        jmsTemplate.convertAndSend("test", "pluto is not a planet");
+        // jmsTemplate.convertAndSend("test", "pluto is not a planet");
         return savedMovie;
     }
 

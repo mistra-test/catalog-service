@@ -16,12 +16,15 @@ import org.springframework.web.bind.annotation.RestController;
 import java.security.Principal;
 import java.util.List;
 
+import javax.annotation.security.PermitAll;
+
 @RestController
 @RequestMapping("/catalog")
 public class CatalogController {
 
     @Autowired private CatalogService catalogService;
 
+    @PermitAll
     @GetMapping("/movies")
     public List<Movie> findAllMovies() {
         return catalogService.getMovieList();
