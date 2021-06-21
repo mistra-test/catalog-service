@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.Serializable;
@@ -61,7 +60,7 @@ public class CatalogService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    // @Transactional
     public Movie save(Movie movie) {
         if (!contextUserCanWriteMovies())
             throw new UnauthorizedOperationException("movie saving grant is missing");
