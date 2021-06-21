@@ -6,6 +6,8 @@ com.example:
     location: http://localhost:8782
   rating-resource:
     location: http://localhost:8784
+  jwt-resource:
+    location: http://localhost:8764
 
 spring:
   artemis:

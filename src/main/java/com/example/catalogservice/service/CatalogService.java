@@ -9,6 +9,7 @@ import com.example.catalogservice.model.Rating;
 import lombok.Data;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,12 @@ public class CatalogService {
     private RestTemplate restTemplate;
     //  private JmsTemplate jmsTemplate;
 
+    @Value("${com.example.movie-resource.location}")
+    private String movieResourceEndpoint;
+
+    @Value("${com.example.rating-resource.location}")
+    private String ratingResourceEndpoint;
+
     @Autowired
     public CatalogService(RestTemplate restTemplate /*, JmsTemplate jmsTemplate*/) {
         this.restTemplate = restTemplate;
@@ -41,7 +48,8 @@ public class CatalogService {
 
     public List<Movie> getMovieList() {
 
-        Movies movieList = restTemplate.getForObject("http://movie-resource/movies", Movies.class);
+        Movies movieList =
+                restTemplate.getForObject(movieResourceEndpoint + "/movies", Movies.class);
 
         if (movieList == null) throw new NullWrapperException();
 
@@ -52,7 +60,7 @@ public class CatalogService {
 
         Ratings ratingList =
                 restTemplate.getForObject(
-                        "http://rating-resource/ratings/findByUser/" + userId, Ratings.class);
+                        ratingResourceEndpoint + "/ratings/findByUser/" + userId, Ratings.class);
         if (ratingList == null) throw new NullWrapperException();
 
         return ratingList.getRatingList().stream()
@@ -65,7 +73,7 @@ public class CatalogService {
         if (!contextUserCanWriteMovies())
             throw new UnauthorizedOperationException("movie saving grant is missing");
         var savedMovie =
-                restTemplate.postForObject("http://movie-resource/movies", movie, Movie.class);
+                restTemplate.postForObject(movieResourceEndpoint + "/movies", movie, Movie.class);
         // jmsTemplate.convertAndSend("test", "pluto is not a planet");
         return savedMovie;
     }
@@ -75,13 +83,14 @@ public class CatalogService {
         rating.setScore(ratedMovie.getScore());
         rating.setMovieId(ratedMovie.getMovieId());
         rating.setUserId(userId);
-        return restTemplate.postForObject("http://rating-resource/ratings", rating, Rating.class);
+        return restTemplate.postForObject(
+                ratingResourceEndpoint + "/ratings", rating, Rating.class);
     }
 
     private RatedMovie joinRatingWithMovie(Rating rating) {
         var movie =
                 restTemplate.getForObject(
-                        "http://movie-resource/movies/" + rating.getMovieId(), Movie.class);
+                        movieResourceEndpoint + "/movies/" + rating.getMovieId(), Movie.class);
         return RatedMovie.from(movie, rating);
     }
 

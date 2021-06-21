@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -41,6 +42,9 @@ class CustomAuthority implements GrantedAuthority {
 public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Autowired RestTemplate restTemplate;
+
+    @Value("${com.example.jwt-resource.location}")
+    private String jwtResourceEndpoint;
 
     @Override
     protected void doFilterInternal(
@@ -85,7 +89,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             UserDetails user =
                     new CustomUser(
                             restTemplate.getForObject(
-                                    "http://jwt-resource/jwt/decode/" + jwt, User.class));
+                                    jwtResourceEndpoint + "/jwt/decode/" + jwt, User.class));
             return Optional.of(user);
         } catch (RestClientException e) {
             log.error("jwt-resource not reponding");

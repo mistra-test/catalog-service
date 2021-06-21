@@ -10,3 +10,5 @@ com.example:
     location: http://movie-resource-service:8080
   rating-resource:
     location: http://rating-resource-service:8080
+  jwt-resource:
+    location: http://jwt-resource-service:8080
