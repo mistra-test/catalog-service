@@ -16,7 +16,7 @@ public class RatedMovie implements Serializable {
     private Integer score;
 
     public static RatedMovie from(Movie movie, Rating rating) {
-        RatedMovie ratedMovie = new RatedMovie();
+        var ratedMovie = new RatedMovie();
         ratedMovie.setMovieId(movie.getId());
         ratedMovie.setMovieName(movie.getName());
         ratedMovie.setMovieDescription(movie.getDescription());

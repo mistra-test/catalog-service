@@ -13,7 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -38,7 +38,7 @@ class CustomAuthority implements GrantedAuthority {
 }
 
 @Log4j2
-@Component
+@Service
 public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Autowired RestTemplate restTemplate;

@@ -3,10 +3,10 @@ package com.example.catalogservice.service;
 import com.example.catalogservice.exception.NullWrapperException;
 import com.example.catalogservice.exception.UnauthorizedOperationException;
 import com.example.catalogservice.model.Movie;
+import com.example.catalogservice.model.Movies;
 import com.example.catalogservice.model.RatedMovie;
 import com.example.catalogservice.model.Rating;
-
-import lombok.Data;
+import com.example.catalogservice.model.Ratings;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,19 +15,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
-
-@Data
-class Movies implements Serializable {
-    private List<Movie> movieList;
-}
-
-@Data
-class Ratings implements Serializable {
-    private List<Rating> ratingList;
-}
 
 @Service
 public class CatalogService {
