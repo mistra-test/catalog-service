@@ -22,7 +22,7 @@ spec:
         - containerPort: 8080
         resources:
           requests:
-            cpu: "100m"
+            cpu: "50m"
             memory: "100M"
           limits:
             cpu: "800m"
@@ -35,7 +35,6 @@ metadata:
 spec:
   selector:
     app: catalog-service
-  type: LoadBalancer
   ports:
     - protocol: TCP
       port: 8080
