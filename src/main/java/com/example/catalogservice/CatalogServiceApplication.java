@@ -10,7 +10,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.ConfigurationWarningsApplicationContextInitializer;
 import org.springframework.boot.context.ContextIdApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.nativex.hint.AotProxyHint;
 import org.springframework.nativex.hint.NativeHint;
+import org.springframework.nativex.hint.ProxyBits;
 import org.springframework.nativex.hint.TypeHint;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,6 +23,9 @@ import org.springframework.web.client.RestTemplate;
 @TypeHint(types = ConfigurationWarningsApplicationContextInitializer.class)
 @TypeHint(types = ContextIdApplicationContextInitializer.class)
 @TypeHint(types = ParameterizedMessageFactory.class)
+@AotProxyHint(
+        targetClass = com.example.catalogservice.service.CatalogService.class,
+        proxyFeatures = ProxyBits.IS_STATIC)
 @NativeHint(trigger = RestTemplate.class, options = "--enable-url-protocols=http")
 @SpringBootApplication
 public class CatalogServiceApplication {
