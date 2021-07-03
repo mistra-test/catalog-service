@@ -1,44 +1,35 @@
 package com.example.catalogservice.service;
 
+import com.example.catalogservice.config.ResourcesLocation;
 import com.example.catalogservice.exception.NullWrapperException;
-import com.example.catalogservice.exception.UnauthorizedOperationException;
 import com.example.catalogservice.model.Movie;
 import com.example.catalogservice.model.Movies;
 import com.example.catalogservice.model.RatedMovie;
 import com.example.catalogservice.model.Rating;
 import com.example.catalogservice.model.Ratings;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
+@RequiredArgsConstructor
 public class CatalogService {
-    private RestTemplate restTemplate;
-    //  private JmsTemplate jmsTemplate;
 
-    @Value("${com.example.movie-resource.location}")
-    private String movieResourceEndpoint;
+    private final RestTemplate restTemplate;
 
-    @Value("${com.example.rating-resource.location}")
-    private String ratingResourceEndpoint;
-
-    @Autowired
-    public CatalogService(RestTemplate restTemplate /*, JmsTemplate jmsTemplate*/) {
-        this.restTemplate = restTemplate;
-        // this.jmsTemplate = jmsTemplate;
-    }
+    private final ResourcesLocation resourcesLocation;
 
     public List<Movie> getMovieList() {
-
-        Movies movieList =
-                restTemplate.getForObject(movieResourceEndpoint + "/movies", Movies.class);
+        var url = resourcesLocation.getMovieResource() + "/movies";
+        var movieList = restTemplate.getForObject(url, Movies.class);
 
         if (movieList == null) throw new NullWrapperException();
 
@@ -46,10 +37,11 @@ public class CatalogService {
     }
 
     public List<RatedMovie> findAllRatedMoviesByUserId(Long userId) {
+        log.debug("fetching all the rated movies for user {}", userId);
 
-        Ratings ratingList =
-                restTemplate.getForObject(
-                        ratingResourceEndpoint + "/ratings/findByUser/" + userId, Ratings.class);
+        var url = resourcesLocation.getRatingResource() + "/ratings/findByUser/" + userId;
+        var ratingList = restTemplate.getForObject(url, Ratings.class);
+
         if (ratingList == null) throw new NullWrapperException();
 
         return ratingList.getRatingList().stream()
@@ -57,14 +49,11 @@ public class CatalogService {
                 .collect(Collectors.toList());
     }
 
-    // @Transactional
+    @Secured("ROLE_movie:write")
     public Movie save(Movie movie) {
-        if (!contextUserCanWriteMovies())
-            throw new UnauthorizedOperationException("movie saving grant is missing");
-        var savedMovie =
-                restTemplate.postForObject(movieResourceEndpoint + "/movies", movie, Movie.class);
-        // jmsTemplate.convertAndSend("test", "pluto is not a planet");
-        return savedMovie;
+        var url = resourcesLocation.getMovieResource() + "/movies";
+
+        return restTemplate.postForObject(url, movie, Movie.class);
     }
 
     public Rating assignRating(Long userId, RatedMovie ratedMovie) {
@@ -72,23 +61,17 @@ public class CatalogService {
         rating.setScore(ratedMovie.getScore());
         rating.setMovieId(ratedMovie.getMovieId());
         rating.setUserId(userId);
-        return restTemplate.postForObject(
-                ratingResourceEndpoint + "/ratings", rating, Rating.class);
+
+        var url = resourcesLocation.getRatingResource() + "/ratings";
+
+        return restTemplate.postForObject(url, rating, Rating.class);
     }
 
     private RatedMovie joinRatingWithMovie(Rating rating) {
-        var movie =
-                restTemplate.getForObject(
-                        movieResourceEndpoint + "/movies/" + rating.getMovieId(), Movie.class);
+
+        var url = resourcesLocation.getMovieResource() + "/movies/" + rating.getMovieId();
+        var movie = restTemplate.getForObject(url, Movie.class);
+
         return RatedMovie.from(movie, rating);
-    }
-
-    private boolean contextUserCanWriteMovies() {
-        List<String> authorities =
-                SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                        .map(GrantedAuthority::toString)
-                        .collect(Collectors.toList());
-
-        return authorities.contains("movie_write");
     }
 }

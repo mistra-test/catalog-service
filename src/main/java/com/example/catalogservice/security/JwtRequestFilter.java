@@ -1,12 +1,12 @@
 package com.example.catalogservice.security;
 
+import com.example.catalogservice.config.ResourcesLocation;
 import com.example.catalogservice.model.CustomUser;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -43,8 +43,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Autowired RestTemplate restTemplate;
 
-    @Value("${com.example.jwt-resource.location}")
-    private String jwtResourceEndpoint;
+    @Autowired ResourcesLocation resourcesLocation;
 
     @Override
     protected void doFilterInternal(
@@ -69,10 +68,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     try {
                         chain.doFilter(request, response);
                     } catch (IOException e) {
-                        log.error("internal error while authenticating");
+                        log.error("internal error while authenticating", e);
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     } catch (ServletException e) {
-                        log.error("unknown internal error while authenticating");
+                        log.error("unknown internal error while authenticating", e);
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     }
                 };
@@ -86,10 +85,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     private Optional<UserDetails> fetchUserDetails(String jwt) {
         try {
-            UserDetails user =
-                    new CustomUser(
-                            restTemplate.getForObject(
-                                    jwtResourceEndpoint + "/jwt/decode/" + jwt, User.class));
+            var url = resourcesLocation.getJwtResource() + "/jwt/decode/" + jwt;
+            UserDetails user = new CustomUser(restTemplate.getForObject(url, User.class));
             return Optional.of(user);
         } catch (RestClientException e) {
             log.error("jwt-resource not reponding");

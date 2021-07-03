@@ -1,13 +1,12 @@
 server:
   port: 8780
 
-com.example:
-  movie-resource:
-    location: http://localhost:8782
-  rating-resource:
-    location: http://localhost:8784
-  jwt-resource:
-    location: http://localhost:8764
+logging.level.com.example: TRACE
+
+resources:
+  movie-resource: http://localhost:8782
+  rating-resource: http://localhost:8784
+  jwt-resource: http://localhost:8764
 
 spring:
   artemis:
