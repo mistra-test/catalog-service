@@ -5,10 +5,7 @@ spring:
 server:
   port: 8080
 
-com.example:
-  movie-resource:
-    location: http://movie-resource-service:8080
-  rating-resource:
-    location: http://rating-resource-service:8080
-  jwt-resource:
-    location: http://jwt-resource-service:8080
+resources:
+  movie-resource: http://movie-resource-service:8080
+  rating-resource: http://rating-resource-service:8080
+  jwt-resource: http://jwt-resource-service:8080
