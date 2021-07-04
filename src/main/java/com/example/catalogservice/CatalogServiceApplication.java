@@ -15,7 +15,6 @@ import org.springframework.nativex.hint.TypeHint;
 // @EnableJms
 @TypeHint(types = Ratings.class)
 @TypeHint(types = Movies.class)
-// @TypeHint(types = JwtRequestFilter.class)
 @TypeHint(types = ConfigurationWarningsApplicationContextInitializer.class)
 @TypeHint(types = ContextIdApplicationContextInitializer.class)
 @TypeHint(types = ParameterizedMessageFactory.class)
@@ -25,8 +24,6 @@ import org.springframework.nativex.hint.TypeHint;
 @AotProxyHint(
         targetClass = com.example.catalogservice.controller.CatalogController.class,
         proxyFeatures = ProxyBits.IS_STATIC)
-
-// @NativeHint(trigger = RestTemplate.class, options = "--enable-url-protocols=http")
 @SpringBootApplication
 public class CatalogServiceApplication {
 
