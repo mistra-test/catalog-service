@@ -6,6 +6,7 @@ import com.example.catalogservice.model.Rating;
 import com.example.catalogservice.service.CatalogService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.Principal;
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import javax.annotation.security.PermitAll;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/catalog")
@@ -24,25 +25,25 @@ public class CatalogController {
 
     @Autowired private CatalogService catalogService;
 
-    @PermitAll
     @GetMapping("/movies")
-    public List<Movie> findAllMovies() {
+    public Flux<Movie> findAllMovies() {
         return catalogService.getMovieList();
     }
 
+    @PreAuthorize("hasAuthority('movie:write')")
     @PostMapping("/movies")
-    public Movie save(@RequestBody Movie movie) {
+    public Mono<Movie> save(@RequestBody Movie movie) {
         return catalogService.save(movie);
     }
 
     @GetMapping("/movies/rated")
-    public List<RatedMovie> findAllRatedMovies(Principal principal) {
+    public Flux<RatedMovie> findAllRatedMovies(Principal principal) {
         var userId = Long.valueOf(principal.getName());
         return catalogService.findAllRatedMoviesByUserId(userId);
     }
 
     @PatchMapping("/movies/rate")
-    public Rating rateMovie(@RequestBody RatedMovie ratedMovie, Principal principal) {
+    public Mono<Rating> rateMovie(@RequestBody RatedMovie ratedMovie, Principal principal) {
         var userId = Long.valueOf(principal.getName());
         return catalogService.assignRating(userId, ratedMovie);
     }

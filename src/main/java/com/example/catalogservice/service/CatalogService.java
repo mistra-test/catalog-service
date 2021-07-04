@@ -1,77 +1,78 @@
 package com.example.catalogservice.service;
 
 import com.example.catalogservice.config.ResourcesLocation;
-import com.example.catalogservice.exception.NullWrapperException;
 import com.example.catalogservice.model.Movie;
-import com.example.catalogservice.model.Movies;
 import com.example.catalogservice.model.RatedMovie;
 import com.example.catalogservice.model.Rating;
-import com.example.catalogservice.model.Ratings;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-@Log4j2
 @Service
 @RequiredArgsConstructor
 public class CatalogService {
 
-    private final RestTemplate restTemplate;
+    private final WebClient.Builder webClientBuilder;
 
     private final ResourcesLocation resourcesLocation;
 
-    public List<Movie> getMovieList() {
-        var url = resourcesLocation.getMovieResource() + "/movies";
-        var movieList = restTemplate.getForObject(url, Movies.class);
-
-        if (movieList == null) throw new NullWrapperException();
-
-        return movieList.getMovieList();
+    public Flux<Movie> getMovieList() {
+        return webClientBuilder
+                .build()
+                .get()
+                .uri(resourcesLocation.getMovieResource() + "/movies")
+                .retrieve()
+                .bodyToFlux(Movie.class);
     }
 
-    public List<RatedMovie> findAllRatedMoviesByUserId(Long userId) {
-        log.debug("fetching all the rated movies for user {}", userId);
-
-        var url = resourcesLocation.getRatingResource() + "/ratings/findByUser/" + userId;
-        var ratingList = restTemplate.getForObject(url, Ratings.class);
-
-        if (ratingList == null) throw new NullWrapperException();
-
-        return ratingList.getRatingList().stream()
-                .map(this::joinRatingWithMovie)
-                .collect(Collectors.toList());
+    public Flux<RatedMovie> findAllRatedMoviesByUserId(Long userId) {
+        return webClientBuilder
+                .build()
+                .get()
+                .uri(resourcesLocation.getRatingResource() + "/ratings/findByUser/" + userId)
+                .retrieve()
+                .bodyToFlux(Rating.class)
+                .flatMap(this::joinRatingWithMovie);
     }
 
-    @Secured("ROLE_movie:write")
-    public Movie save(Movie movie) {
-        var url = resourcesLocation.getMovieResource() + "/movies";
-
-        return restTemplate.postForObject(url, movie, Movie.class);
+    public Mono<Movie> save(Movie movie) {
+        return webClientBuilder
+                .build()
+                .post()
+                .uri(resourcesLocation.getMovieResource() + "/movies")
+                .bodyValue(movie)
+                .retrieve()
+                .bodyToMono(Movie.class);
     }
 
-    public Rating assignRating(Long userId, RatedMovie ratedMovie) {
+    public Mono<Rating> assignRating(Long userId, RatedMovie ratedMovie) {
+
         var rating = new Rating();
         rating.setScore(ratedMovie.getScore());
         rating.setMovieId(ratedMovie.getMovieId());
         rating.setUserId(userId);
 
-        var url = resourcesLocation.getRatingResource() + "/ratings";
-
-        return restTemplate.postForObject(url, rating, Rating.class);
+        return webClientBuilder
+                .build()
+                .post()
+                .uri(resourcesLocation.getRatingResource() + "/ratings")
+                .bodyValue(rating)
+                .retrieve()
+                .bodyToMono(Rating.class);
     }
 
-    private RatedMovie joinRatingWithMovie(Rating rating) {
-
-        var url = resourcesLocation.getMovieResource() + "/movies/" + rating.getMovieId();
-        var movie = restTemplate.getForObject(url, Movie.class);
-
-        return RatedMovie.from(movie, rating);
+    private Mono<RatedMovie> joinRatingWithMovie(Rating rating) {
+        return webClientBuilder
+                .build()
+                .get()
+                .uri(resourcesLocation.getMovieResource() + "/movies/" + rating.getMovieId())
+                .retrieve()
+                .bodyToMono(Movie.class)
+                .map(movie -> RatedMovie.from(movie, rating));
     }
 }

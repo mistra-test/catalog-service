@@ -1,30 +1,51 @@
 package com.example.catalogservice.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import lombok.AllArgsConstructor;
 
-@EnableWebSecurity
-@EnableGlobalMethodSecurity(securedEnabled = true)
-public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
+import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
 
-    @Autowired private JwtRequestFilter jwtRequestFilter;
+import reactor.core.publisher.Mono;
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.csrf()
+@AllArgsConstructor
+@EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
+public class SecurityConfigurer {
+
+    private final AuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContextRepository;
+
+    @Bean
+    public SecurityWebFilterChain securitygWebFilterChain(ServerHttpSecurity http) {
+
+        ServerAuthenticationEntryPoint unauthorized =
+                (swe, e) ->
+                        Mono.fromRunnable(
+                                () -> swe.getResponse().setStatusCode(HttpStatus.FORBIDDEN));
+
+        ServerAccessDeniedHandler forbidden =
+                (swe, e) ->
+                        Mono.fromRunnable(
+                                () -> swe.getResponse().setStatusCode(HttpStatus.FORBIDDEN));
+
+        return http.exceptionHandling()
+                .authenticationEntryPoint(unauthorized)
+                .accessDeniedHandler(forbidden)
+                .and()
+                .csrf()
                 .disable()
-                .authorizeRequests()
-                .anyRequest()
+                .authenticationManager(authenticationManager)
+                .securityContextRepository(securityContextRepository)
+                .authorizeExchange()
+                .anyExchange()
                 .authenticated()
                 .and()
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-
-        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                .build();
     }
 }
