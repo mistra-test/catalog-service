@@ -22,6 +22,10 @@ import org.springframework.nativex.hint.TypeHint;
 @AotProxyHint(
         targetClass = com.example.catalogservice.service.CatalogService.class,
         proxyFeatures = ProxyBits.IS_STATIC)
+@AotProxyHint(
+        targetClass = com.example.catalogservice.controller.CatalogController.class,
+        proxyFeatures = ProxyBits.IS_STATIC)
+
 // @NativeHint(trigger = RestTemplate.class, options = "--enable-url-protocols=http")
 @SpringBootApplication
 public class CatalogServiceApplication {
